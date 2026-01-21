@@ -1,22 +1,22 @@
 # Forex Advisor
 
-Solução baseada em pipeline de dados de forex, scraping de notícias, classificação com ML clássico e LLM (agente de IA) para gerar insights contextualizados sobre o par BRL/USD.
+Sistema de análise de mercado de câmbio baseado em pipeline de dados, coleta automatizada de notícias, classificação utilizando Machine Learning clássico e Large Language Models (LLM) para geração de insights contextualizados sobre o par de moedas BRL/USD.
 
-## 📋 Visão Geral
+## Visão Geral
 
 O Forex Advisor combina análise técnica quantitativa (indicadores técnicos) com dados qualitativos (notícias recentes) para gerar insights informativos que ajudam usuários a entender o cenário atual do mercado de câmbio, **sem fazer recomendações explícitas de investimento**.
 
 ### Objetivo
 
-Reduzir a fricção na decisão de "Será que agora é um bom momento para comprar?" fornecendo informações contextuais claras e objetivas.
+O objetivo do sistema é fornecer informações contextuais claras e objetivas sobre o mercado de câmbio, auxiliando usuários na tomada de decisões informadas através da análise técnica e contextualização de eventos de mercado.
 
-## 🚀 Instalação e Execução
+## Instalação e Execução
 
 ### Pré-requisitos
 
 - Python 3.11 ou superior
 - Docker (opcional, para execução via container)
-- API Key do Google Gemini - opcional, o sistema funciona com fallback
+- API Key do Google Gemini (opcional - o sistema funciona com fallback quando não configurada)
 
 ### Instalação Local
 
@@ -37,14 +37,15 @@ source venv/bin/activate  # No Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Configure variáveis de ambiente (opcional):
+4. Configure as variáveis de ambiente (opcional):
 ```bash
 # Criar arquivo .env
-export GOOGLE_API_KEY="sua_chave_aqui"  # Para usar Google Gemini
-export LLM_PROVIDER="gemini"  # Padrão é "gemini", também suporta "openai", "anthropic", "ollama", "fallback"
+export GOOGLE_API_KEY="sua_chave_aqui"  # Para utilizar Google Gemini
+export LLM_PROVIDER="gemini"  # Padrão: "gemini". Também suporta: "openai", "anthropic", "ollama", "fallback"
 ```
 
 **Como obter a API Key do Google Gemini:**
+
 1. Acesse [Google AI Studio](https://makersuite.google.com/app/apikey)
 2. Faça login com sua conta Google
 3. Clique em "Create API Key"
@@ -55,23 +56,23 @@ export LLM_PROVIDER="gemini"  # Padrão é "gemini", também suporta "openai", "
 python main.py
 ```
 
-### Execução via Docker
+## Execução via Docker
 
-1. Construa a imagem:
+1. Construa a imagem Docker:
 ```bash
 docker build -t forex-advisor .
 ```
 
 2. Execute o container:
 ```bash
-# Com variáveis de ambiente
+# Com arquivo de variáveis de ambiente
 docker run --env-file .env forex-advisor
 
 # Ou passando variáveis diretamente
 docker run -e GOOGLE_API_KEY="sua_chave" -e LLM_PROVIDER="gemini" forex-advisor
 ```
 
-## 📊 Lógica do Motor de Recomendação
+## Lógica do Motor de Recomendação
 
 ### Indicadores Técnicos Utilizados
 
@@ -106,10 +107,11 @@ O sistema calcula os seguintes indicadores técnicos:
 
 ### Heurística de Classificação
 
-O sistema classifica o cenário atual em **4 categorias** usando uma heurística baseada em regras:
+O sistema classifica o cenário atual do mercado em **4 categorias** utilizando uma heurística baseada em regras:
 
 #### 1. Tendência de Alta
-**Condições**:
+
+**Condições:**
 - Preço atual acima da SMA(20) e SMA(50)
 - RSI entre 50-70 (zona neutra-alta)
 - Tendência ascendente (SMA(20) em alta)
@@ -117,7 +119,8 @@ O sistema classifica o cenário atual em **4 categorias** usando uma heurística
 **Pontuação**: +1 ponto para cada condição atendida
 
 #### 2. Tendência de Baixa
-**Condições**:
+
+**Condições:**
 - Preço atual abaixo da SMA(20) e SMA(50)
 - RSI entre 30-50 (zona neutra-baixa)
 - Tendência descendente (SMA(20) em queda)
@@ -125,7 +128,8 @@ O sistema classifica o cenário atual em **4 categorias** usando uma heurística
 **Pontuação**: +1 ponto para cada condição atendida
 
 #### 3. Alta Volatilidade
-**Condições**:
+
+**Condições:**
 - Volatilidade histórica acima do percentil 75
 - Bandas de Bollinger expandidas (largura acima do percentil 75)
 - Preço próximo das bandas (posição < 0.2 ou > 0.8)
@@ -133,7 +137,8 @@ O sistema classifica o cenário atual em **4 categorias** usando uma heurística
 **Pontuação**: +2 pontos para volatilidade alta, +1 para cada outra condição
 
 #### 4. Neutro
-**Condição**: Quando nenhuma das outras categorias se destaca claramente
+
+**Condição:** Quando nenhuma das outras categorias se destaca claramente
 
 ### Exemplo de Classificação
 
@@ -143,11 +148,11 @@ Confiança: 75%
 Explicação: Preço (5.1234) acima das médias móveis; RSI em 62.50 (zona neutra-alta)
 ```
 
-## 🔍 Explicabilidade das Features
+## Explicabilidade das Features
 
 ### Método de Explicabilidade
 
-O sistema utiliza um **Random Forest Classifier** como modelo auxiliar para calcular a importância de cada feature. O modelo é treinado usando as classificações heurísticas como target, permitindo identificar quais indicadores técnicos são mais influentes na classificação.
+O sistema utiliza um **Random Forest Classifier** como modelo auxiliar para calcular a importância de cada feature. O modelo é treinado utilizando as classificações heurísticas como target, permitindo identificar quais indicadores técnicos são mais influentes na classificação do mercado.
 
 ### Features Calculadas
 
@@ -180,7 +185,7 @@ FEATURES MAIS INFLUENTES
    SMA_50: 0.0987
 ```
 
-## 🔄 Pipeline de Geração de Insights
+## Pipeline de Geração de Insights
 
 ### Fluxo de Dados
 
@@ -198,9 +203,9 @@ Output Final (Insight Contextualizado)
 
 ### Integração de Notícias
 
-1. **Busca de Contexto**: O sistema usa Google Gemini (LLM) para buscar e resumir notícias recentes (últimos 7 dias) relevantes para BRL/USD
-2. **Filtragem**: Notícias são filtradas por relevância e data
-3. **Formatação**: Notícias são formatadas para inclusão no prompt do agente LLM
+1. **Busca de Contexto**: O sistema utiliza Google Gemini (LLM) para buscar e resumir notícias recentes (últimos 7 dias) relevantes para o par BRL/USD
+2. **Filtragem**: As notícias são filtradas por relevância e data
+3. **Formatação**: As notícias são formatadas para inclusão no prompt do agente LLM
 
 ### Formato do Prompt
 
@@ -216,7 +221,7 @@ O sistema valida o output gerado para garantir:
 - Ausência de palavras proibidas (ex: "compre agora", "venda")
 - Ausência de padrões de recomendação
 - Tamanho adequado (3-4 frases)
-- Se necessário, aplica correções automáticas
+- Aplicação de correções automáticas quando necessário
 
 ### Exemplo de Insight Gerado
 
@@ -229,9 +234,9 @@ mercado. Recomenda-se monitorar continuamente os indicadores técnicos e
 eventos econômicos relevantes.
 ```
 
-## 📈 Escalabilidade
+## Escalabilidade
 
-Esta seção detalha como o sistema poderia ser escalado para atender milhares de usuários ativos, garantindo performance, frescor e relevância dos dados.
+Esta seção detalha como o sistema pode ser escalado para atender milhares de usuários ativos, garantindo performance, atualização e relevância dos dados.
 
 ### LLM em Produção
 
@@ -255,10 +260,10 @@ else:
     return insight
 ```
 
-**Benefícios**:
-- Reduz custos de API do LLM em ~70-80%
-- Reduz latência de ~2-5s para ~50-100ms (cache hit)
-- Permite servir milhares de usuários simultaneamente
+**Benefícios:**
+- Redução de custos de API do LLM em aproximadamente 70-80%
+- Redução de latência de 2-5 segundos para 50-100 milissegundos (cache hit)
+- Capacidade de atender milhares de usuários simultaneamente
 
 ### Injeção de Contexto
 
@@ -337,7 +342,7 @@ prompt = build_prompt(..., news=relevant_news)
   - `news-scraper`: Coleta e processa notícias a cada hora
   - `insight-generator`: Gera insights quando solicitado
 
-**Benefícios**:
+**Benefícios:**
 - Processamento paralelo
 - Tolerância a falhas
 - Escalabilidade horizontal
@@ -386,34 +391,34 @@ Users → Load Balancer → API Instances (FastAPI) → Redis Cache
 
 #### Monitoramento
 
-**Métricas Essenciais**:
-- **Latência**: p50, p95, p99 (target: <200ms para cache hit, <5s para cache miss)
-- **Cache Hit Rate**: Target >80%
-- **Frescor de Dados**: Tempo desde última atualização (target: <15min)
-- **Custo de API**: Custo por insight gerado (LLM calls)
-- **Throughput**: Requests por segundo
+**Métricas Essenciais:**
+- **Latência**: p50, p95, p99 (objetivo: <200ms para cache hit, <5s para cache miss)
+- **Cache Hit Rate**: Objetivo >80%
+- **Atualização de Dados**: Tempo desde última atualização (objetivo: <15min)
+- **Custo de API**: Custo por insight gerado (chamadas LLM)
+- **Throughput**: Requisições por segundo
 
-**Alertas**:
+**Alertas:**
 - Cache hit rate <70%
 - Latência p95 >5s
 - Dados desatualizados >30min
-- Erro rate >1%
+- Taxa de erro >1%
 
 ### Estimativa de Capacidade
 
-**Cenário**: 10.000 usuários ativos, cada um fazendo 10 requisições por dia
+**Cenário:** 10.000 usuários ativos, cada um realizando 10 requisições por dia
 
 - **Requisições/dia**: 100.000
-- **Requisições/minuto**: ~70
-- **Cache Hit Rate (80%)**: 56 req/min do cache, 14 req/min gerando insights
-- **Custo LLM**: ~14 * 60 * 24 = ~20.000 calls/dia
-- **Infraestrutura Mínima**:
+- **Requisições/minuto**: aproximadamente 70
+- **Cache Hit Rate (80%)**: 56 requisições/min do cache, 14 requisições/min gerando insights
+- **Custo LLM**: aproximadamente 14 * 60 * 24 = aproximadamente 20.000 chamadas/dia
+- **Infraestrutura Mínima:**
   - 2-3 instâncias de API (t2.medium)
   - 1 instância Redis (cache.r6g.large)
   - 1 instância Vector DB (Pinecone Starter)
   - 1 instância Timeseries DB (TimescaleDB Cloud)
 
-## 🛠️ Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 forex-advisor/
@@ -432,18 +437,18 @@ forex-advisor/
 │       └── agent.py              # Geração de insights via LLM
 ```
 
-## 📝 Notas Importantes
+## Notas Importantes
 
 - **Sem Recomendações de Investimento**: O sistema é projetado para **informar e contextualizar**, nunca para recomendar ações de compra/venda
-- **Dados Históricos**: Usa dados dos últimos 5 anos para análise técnica
+- **Dados Históricos**: Utiliza dados dos últimos 5 anos para análise técnica
 - **Notícias**: Busca contexto dos últimos 7 dias
-- **Fallback**: O sistema funciona mesmo sem API key do Google Gemini (usando fallback básico)
-- **Provedor LLM**: O sistema usa Google Gemini por padrão, mas suporta outros provedores (OpenAI, Anthropic, Ollama) via variável de ambiente
+- **Fallback**: O sistema funciona mesmo sem API key do Google Gemini (utilizando fallback básico)
+- **Provedor LLM**: O sistema utiliza Google Gemini por padrão, mas suporta outros provedores (OpenAI, Anthropic, Ollama) via variável de ambiente
 
-## 🤝 Contribuindo
+## Contribuindo
 
-Contribuições são bem-vindas! Por favor, abra uma issue ou pull request.
+Contribuições são bem-vindas. Por favor, abra uma issue ou pull request seguindo os padrões do projeto.
 
-## 📄 Licença
+## Licença
 
 Ver arquivo LICENSE para detalhes.
