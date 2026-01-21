@@ -305,6 +305,88 @@ def analyze_market(df):
     }
 
 
+def display_dataframe_structure(df_raw, df_with_indicators):
+    """
+    Exibe a estrutura do DataFrame em formato tabular.
+    
+    Args:
+        df_raw: DataFrame com dados brutos OHLC
+        df_with_indicators: DataFrame com indicadores calculados
+    """
+    print("\n" + "="*100)
+    print("ESTRUTURA DO DATAFRAME - DADOS BRUTOS (OHLC)")
+    print("="*100)
+    print(f"\nShape: {df_raw.shape[0]} linhas × {df_raw.shape[1]} colunas")
+    print(f"\nColunas: {list(df_raw.columns)}")
+    print("\nPrimeiras 5 linhas:")
+    print(df_raw.head().to_string())
+    print("\nÚltimas 5 linhas:")
+    print(df_raw.tail().to_string())
+    print("\nInformações do DataFrame:")
+    print(df_raw.info())
+    print("\nEstatísticas Descritivas:")
+    print(df_raw.describe().to_string())
+    
+    print("\n" + "="*100)
+    print("ESTRUTURA DO DATAFRAME - COM INDICADORES TÉCNICOS")
+    print("="*100)
+    print(f"\nShape: {df_with_indicators.shape[0]} linhas × {df_with_indicators.shape[1]} colunas")
+    print(f"\nColunas ({len(df_with_indicators.columns)}):")
+    for i, col in enumerate(df_with_indicators.columns, 1):
+        print(f"  {i:2d}. {col}")
+    
+    categories = {
+        'Dados Originais': ['Date', 'Open', 'High', 'Low', 'Close', 'Volume'],
+        'Médias Móveis': ['SMA_20', 'SMA_50', 'SMA_200'],
+        'RSI': ['RSI'],
+        'Bandas de Bollinger': ['BB_Upper', 'BB_Middle', 'BB_Lower', 'BB_Width', 'BB_Position'],
+        'Volatilidade': ['Volatility'],
+        'MACD': ['MACD', 'MACD_Signal', 'MACD_Histogram'],
+        'Suporte/Resistência': ['Support', 'Resistance'],
+        'Retornos e Tendências': ['Returns', 'Trend_20', 'Trend_50']
+    }
+    
+    print("\n" + "-"*100)
+    print("COLUNAS POR CATEGORIA:")
+    print("-"*100)
+    for category, cols in categories.items():
+        available_cols = [c for c in cols if c in df_with_indicators.columns]
+        if available_cols:
+            print(f"\n{category}:")
+            for col in available_cols:
+                print(f"  - {col}")
+    
+    print("\n" + "-"*100)
+    print("ÚLTIMAS 10 LINHAS COM INDICADORES (DADOS MAIS RECENTES):")
+    print("-"*100)
+    
+    # Selecionar colunas principais para visualização
+    display_cols = ['Date', 'Close', 'SMA_20', 'SMA_50', 'RSI', 'BB_Width', 
+                    'Volatility', 'MACD', 'Returns', 'Trend_20']
+    available_display_cols = [c for c in display_cols if c in df_with_indicators.columns]
+    
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.width', None)
+    pd.set_option('display.max_colwidth', 20)
+    pd.set_option('display.float_format', lambda x: f'{x:.4f}' if abs(x) < 1000 else f'{x:.2f}')
+    
+    print(df_with_indicators[available_display_cols].tail(10).to_string())
+    
+    print("\n" + "-"*100)
+    print("VALORES ATUAIS (ÚLTIMA LINHA):")
+    print("-"*100)
+    latest = df_with_indicators.iloc[-1]
+    for col in df_with_indicators.columns:
+        value = latest[col]
+        if pd.notna(value):
+            if isinstance(value, (int, float)):
+                print(f"{col:25s}: {value:15.4f}")
+            else:
+                print(f"{col:25s}: {str(value):15s}")
+        else:
+            print(f"{col:25s}: {'NaN':15s}")
+
+
 if __name__ == "__main__":
     import sys
     import os
@@ -320,10 +402,16 @@ if __name__ == "__main__":
     
     data = fetch_forex_data(years=1)
     
+    data_with_indicators = calculate_all_indicators(data)
+    
+    display_dataframe_structure(data, data_with_indicators)
+    
     analysis = analyze_market(data)
     
-    print("\n=== Análise de Mercado ===")
-    print(f"Classificação: {analysis['classification']}")
+    print("\n" + "="*100)
+    print("ANÁLISE DE MERCADO")
+    print("="*100)
+    print(f"\nClassificação: {analysis['classification']}")
     print(f"Confiança: {analysis['confidence']:.2%}")
     print(f"Explicação: {analysis['explanation']}")
     print("\n=== Importância das Features ===")

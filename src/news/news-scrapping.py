@@ -169,12 +169,7 @@ def _fetch_news_fallback(currency_pair, days):
         {
             'title': f'Monitoramento de {currency_pair}',
             'date': datetime.now().strftime('%Y-%m-%d'),
-            'snippet': f'Análise técnica sugere monitorar indicadores econômicos do Brasil e Estados Unidos que podem impactar a taxa de câmbio {currency_pair}.'
-        },
-        {
-            'title': 'Indicadores Econômicos',
-            'date': datetime.now().strftime('%Y-%m-%d'),
-            'snippet': 'Recomenda-se acompanhar dados de inflação, taxa de juros e balança comercial de ambos os países para entender movimentos do câmbio.'
+            'snippet': f'Sem notícias para o par de moedas: {currency_pair}.'
         }
     ]
 
