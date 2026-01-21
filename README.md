@@ -38,7 +38,7 @@ pip install -r requirements.txt
 ```
 
 4. Configure as variáveis de ambiente no .env:
-# Criar arquivo .env
+Criar arquivo .env
 consulte .env-example
 
 5. Execute o projeto:
@@ -57,7 +57,7 @@ docker build -t forex-advisor .
 ```bash
 # Com arquivo de variáveis de ambiente
 docker run --env-file .env forex-advisor
-
+```
 
 ## Lógica do Motor de Recomendação
 
