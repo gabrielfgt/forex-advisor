@@ -41,15 +41,8 @@ pip install -r requirements.txt
 ```bash
 # Criar arquivo .env
 export GOOGLE_API_KEY="sua_chave_aqui"  # Para utilizar Google Gemini
-export LLM_PROVIDER="gemini"  # Padrão: "gemini". Também suporta: "openai", "anthropic", "ollama", "fallback"
+export LLM_PROVIDER="gemini"  # Padrão: "gemini".
 ```
-
-**Como obter a API Key do Google Gemini:**
-
-1. Acesse [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Faça login com sua conta Google
-3. Clique em "Create API Key"
-4. Copie a chave gerada
 
 5. Execute o projeto:
 ```bash
@@ -246,24 +239,13 @@ Esta seção detalha como o sistema pode ser escalado para atender milhares de u
 - **Cache por Classificação + Contexto**: Gerar insights em batch para combinações comuns de classificação técnica e contexto de notícias
 - **TTL de Cache**: 1 hora (dados de mercado mudam rapidamente)
 - **Fallback em Tempo Real**: Apenas para combinações não cacheadas ou quando cache expira
-- **Chave de Cache**: `hash(classification + news_context_hash + date)`
-
-**Exemplo de Implementação**:
-```python
-cache_key = f"insight:{classification}:{news_hash}:{date}"
-cached_insight = redis.get(cache_key)
-if cached_insight:
-    return cached_insight
-else:
-    insight = generate_insight(...)
-    redis.setex(cache_key, 3600, insight)  # TTL 1 hora
-    return insight
-```
+- **Chave de Cache**: `hash(datetime + moeda/par forex/ticker)`
 
 **Benefícios:**
-- Redução de custos de API do LLM em aproximadamente 70-80%
-- Redução de latência de 2-5 segundos para 50-100 milissegundos (cache hit)
-- Capacidade de atender milhares de usuários simultaneamente
+- Redução de custos de API do LLM
+- Redução de latência
+- Capacidade de atender vários usuários simultaneamente
+- Disponibilidade via API
 
 ### Injeção de Contexto
 
@@ -272,7 +254,7 @@ else:
 #### RAG para Notícias
 
 1. **Vector Database**: Armazenar embeddings de notícias históricas
-   - **Opções**: Pinecone, Weaviate, Qdrant, ou ChromaDB
+   - **Opções**: Postgre + PGVector
    - **Embeddings**: Usar modelo como `text-embedding-ada-002` (OpenAI), `text-embedding-004` (Google) ou `sentence-transformers`
 
 2. **Pipeline de Atualização**:
@@ -284,20 +266,6 @@ else:
    - **Query**: "BRL/USD exchange rate Brazil economy"
    - **Retrieval**: Top-K notícias mais relevantes (K=5-10)
    - **Injeção**: Incluir no prompt do LLM
-
-**Exemplo de Implementação**:
-```python
-# Buscar notícias relevantes
-query_embedding = embed("BRL/USD Brazil economy")
-relevant_news = vector_db.similarity_search(
-    query_embedding, 
-    k=5,
-    filter={"date": {"$gte": "7_days_ago"}}
-)
-
-# Injetar no prompt
-prompt = build_prompt(..., news=relevant_news)
-```
 
 #### Dados de Trading
 
@@ -338,9 +306,9 @@ prompt = build_prompt(..., news=relevant_news)
 - **Pipeline Assíncrono**: Separar coleta de dados, análise técnica e scraping de notícias
 - **Workers Especializados**:
   - `data-collector`: Busca dados OHLC a cada 15 minutos
-  - `technical-analyzer`: Processa indicadores e classificação
-  - `news-scraper`: Coleta e processa notícias a cada hora
-  - `insight-generator`: Gera insights quando solicitado
+  - `technical-analyzer`: Processa indicadores e classificação (ML Clássico)
+  - `news-scraper`: Coleta e processa notícias a cada hora (Gera embeddings/vetores)
+  - `insight-generator`: Gera insights quando solicitado (Disponibildiade via API para usuários)
 
 **Benefícios:**
 - Processamento paralelo
@@ -349,74 +317,26 @@ prompt = build_prompt(..., news=relevant_news)
 
 #### Bancos de Dados
 
-1. **Timeseries DB** (InfluxDB ou TimescaleDB):
-   - **Dados**: OHLC históricos
-   - **Vantagens**: Otimizado para queries temporais, compressão eficiente
-   - **Retention**: 5+ anos de dados
-
-2. **Vector DB** (Pinecone, Weaviate, ou Qdrant):
+1. **Vector DB** (PostgreSQL + PGVector):
    - **Dados**: Embeddings de notícias
    - **Vantagens**: Busca semântica rápida, escalável
-   - **Indexação**: HNSW ou similar para performance
+   - **Indexação**: IVFLAT
+   - **Segurança**: Implementação de RLS
 
 3. **Cache** (Redis):
    - **Dados**: Insights, classificações, indicadores
    - **Configuração**: Cluster mode para alta disponibilidade
-   - **Memory**: ~10-50GB dependendo do volume
 
 #### Serviço de Inference
 
 **API REST** (FastAPI):
 - **Endpoints**:
   - `GET /insight/{currency_pair}`: Retorna insight atual
-  - `GET /classification/{currency_pair}`: Retorna classificação técnica
-  - `GET /indicators/{currency_pair}`: Retorna indicadores atuais
 
 **Características**:
-- **Load Balancer**: Nginx ou AWS ALB para distribuir carga
 - **Rate Limiting**: Por usuário/IP (ex: 100 req/min)
 - **Caching**: Cache HTTP (Cache-Control headers)
 - **Monitoring**: Prometheus + Grafana para métricas
-
-**Exemplo de Arquitetura**:
-```
-Users → Load Balancer → API Instances (FastAPI) → Redis Cache
-                                          ↓
-                                    Vector DB (Notícias)
-                                          ↓
-                                    Timeseries DB (OHLC)
-                                          ↓
-                                    LLM API (Google Gemini)
-```
-
-#### Monitoramento
-
-**Métricas Essenciais:**
-- **Latência**: p50, p95, p99 (objetivo: <200ms para cache hit, <5s para cache miss)
-- **Cache Hit Rate**: Objetivo >80%
-- **Atualização de Dados**: Tempo desde última atualização (objetivo: <15min)
-- **Custo de API**: Custo por insight gerado (chamadas LLM)
-- **Throughput**: Requisições por segundo
-
-**Alertas:**
-- Cache hit rate <70%
-- Latência p95 >5s
-- Dados desatualizados >30min
-- Taxa de erro >1%
-
-### Estimativa de Capacidade
-
-**Cenário:** 10.000 usuários ativos, cada um realizando 10 requisições por dia
-
-- **Requisições/dia**: 100.000
-- **Requisições/minuto**: aproximadamente 70
-- **Cache Hit Rate (80%)**: 56 requisições/min do cache, 14 requisições/min gerando insights
-- **Custo LLM**: aproximadamente 14 * 60 * 24 = aproximadamente 20.000 chamadas/dia
-- **Infraestrutura Mínima:**
-  - 2-3 instâncias de API (t2.medium)
-  - 1 instância Redis (cache.r6g.large)
-  - 1 instância Vector DB (Pinecone Starter)
-  - 1 instância Timeseries DB (TimescaleDB Cloud)
 
 ## Estrutura do Projeto
 
@@ -437,18 +357,4 @@ forex-advisor/
 │       └── agent.py              # Geração de insights via LLM
 ```
 
-## Notas Importantes
-
-- **Sem Recomendações de Investimento**: O sistema é projetado para **informar e contextualizar**, nunca para recomendar ações de compra/venda
-- **Dados Históricos**: Utiliza dados dos últimos 5 anos para análise técnica
-- **Notícias**: Busca contexto dos últimos 7 dias
-- **Fallback**: O sistema funciona mesmo sem API key do Google Gemini (utilizando fallback básico)
-- **Provedor LLM**: O sistema utiliza Google Gemini por padrão, mas suporta outros provedores (OpenAI, Anthropic, Ollama) via variável de ambiente
-
-## Contribuindo
-
-Contribuições são bem-vindas. Por favor, abra uma issue ou pull request seguindo os padrões do projeto.
-
-## Licença
-
-Ver arquivo LICENSE para detalhes.
+# Sugestão de Arquitetura (C4 Model Level 1)
