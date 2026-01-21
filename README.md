@@ -4,7 +4,7 @@ Sistema de análise de mercado de câmbio baseado em pipeline de dados, coleta a
 
 ## Visão Geral
 
-O Forex Advisor combina análise técnica quantitativa (indicadores técnicos) com dados qualitativos (notícias recentes) para gerar insights informativos que ajudam usuários a entender o cenário atual do mercado de câmbio, **sem fazer recomendações explícitas de investimento**.
+O Forex Advisor combina análise técnica quantitativa (indicadores técnicos) com dados qualitativos (notícias recentes) para gerar insights informativos que ajudam usuários a entender o cenário atual do mercado de câmbio.
 
 ### Objetivo
 
@@ -16,7 +16,7 @@ O objetivo do sistema é fornecer informações contextuais claras e objetivas s
 
 - Python 3.11 ou superior
 - Docker (opcional, para execução via container)
-- API Key do Google Gemini (opcional - o sistema funciona com fallback quando não configurada)
+- API Key do Google Gemini
 
 ### Instalação Local
 
@@ -37,12 +37,9 @@ source venv/bin/activate  # No Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Configure as variáveis de ambiente (opcional):
-```bash
+4. Configure as variáveis de ambiente no .env:
 # Criar arquivo .env
-export GOOGLE_API_KEY="sua_chave_aqui"  # Para utilizar Google Gemini
-export LLM_PROVIDER="gemini"  # Padrão: "gemini".
-```
+consulte .env-example
 
 5. Execute o projeto:
 ```bash
@@ -61,9 +58,6 @@ docker build -t forex-advisor .
 # Com arquivo de variáveis de ambiente
 docker run --env-file .env forex-advisor
 
-# Ou passando variáveis diretamente
-docker run -e GOOGLE_API_KEY="sua_chave" -e LLM_PROVIDER="gemini" forex-advisor
-```
 
 ## Lógica do Motor de Recomendação
 
@@ -281,22 +275,16 @@ Esta seção detalha como o sistema pode ser escalado para atender milhares de u
 - **Atualização**: Recalcular apenas se dados de mercado atualizados
 
 #### 2. Insights Gerados
-- **Cache Key**: `insight:{classification_hash}:{news_hash}:{date}`
+- **Cache Key**: `classification:{date}:{currency_pair}`
 - **TTL**: 1 hora
 - **Storage**: Redis
-- **Invalidation**: Quando classificação ou notícias mudam significativamente
+- **Invalidation**: Quando classificação mudam significativamente
 
 #### 3. Embeddings de Notícias
 - **Cache**: Permanente até substituição por notícias mais recentes
-- **Storage**: Vector DB (Pinecone/Weaviate)
+- **Storage**: Vector DB (PostgreSQL + PGVector)
 - **Atualização**: Pipeline assíncrono a cada hora
-- **Retention**: Manter últimos 30 dias
-
-#### 4. Indicadores Técnicos
-- **Cache Key**: `indicators:{date}:{currency_pair}`
-- **TTL**: 15 minutos
-- **Storage**: Redis
-- **Recalculation**: Apenas se necessário (dados novos disponíveis)
+- **Retention**: Manter últimos 30 dias - Criar Trigger para saneameto dos dados antigos.
 
 ### Infraestrutura
 
