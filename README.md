@@ -346,3 +346,5 @@ forex-advisor/
 ```
 
 # Sugestão de Arquitetura (C4 Model Level 1)
+
+![RAG Cloud Architecture Diagram](images/RAG%20Cloud%20Architecture%20Diagram.png)
