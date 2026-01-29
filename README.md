@@ -345,6 +345,6 @@ forex-advisor/
 │       └── agent.py              # Geração de insights via LLM
 ```
 
-# Sugestão de Arquitetura (C4 Model Level 1)
+# Sugestão de Arquitetura Cloud
 
 ![RAG Cloud Architecture Diagram](images/RAG%20Cloud%20Architecture%20Diagram.png)
